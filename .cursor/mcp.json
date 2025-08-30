@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "ivy": {
+      "command": "C:\\Users\\pavel\\.dotnet\\tools\\ivy.exe",
+      "args": [
+        "mcp"
+      ],
+      "env": {}
+    }
+  }
+}
