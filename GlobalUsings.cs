@@ -1,3 +1,4 @@
+global using Microsoft.EntityFrameworkCore;
 global using Ivy;
 global using Ivy.Alerts;
 global using Ivy.Apps;
