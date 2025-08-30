@@ -4,12 +4,12 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace JiraKiller.Connections.JiraKiller;
+namespace Test5.Connections.Test5;
 
-[Table("time_log")]
-[Index("TicketId", Name = "IX_time_log_ticket_id")]
-[Index("UserId", Name = "IX_time_log_user_id")]
-public partial class TimeLog
+[Table("time_entry")]
+[Index("TicketId", Name = "IX_time_entry_ticket_id")]
+[Index("UserId", Name = "IX_time_entry_user_id")]
+public partial class TimeEntry
 {
     [Key]
     [Column("id")]
@@ -21,7 +21,7 @@ public partial class TimeLog
     [Column("user_id")]
     public int UserId { get; set; }
 
-    [Column("hours", TypeName = "decimal(5,2)")]
+    [Column("hours")]
     public decimal Hours { get; set; }
 
     [Column("logged_at")]
@@ -34,10 +34,10 @@ public partial class TimeLog
     public DateTime UpdatedAt { get; set; }
 
     [ForeignKey("TicketId")]
-    [InverseProperty("TimeLogs")]
+    [InverseProperty("TimeEntries")]
     public virtual Ticket Ticket { get; set; } = null!;
 
     [ForeignKey("UserId")]
-    [InverseProperty("TimeLogs")]
+    [InverseProperty("TimeEntries")]
     public virtual User User { get; set; } = null!;
 }

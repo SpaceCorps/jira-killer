@@ -6,8 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>CS8618;CS8603;CS8602;CS8604;CS9113</NoWarn>
-    <RootNamespace>JiraKiller</RootNamespace>
-    <UserSecretsId>5b041012-9b0f-4a8e-839b-6806250edf90</UserSecretsId>
+    <RootNamespace>Test5</RootNamespace>
+    <UserSecretsId>8b4a6e7a-2511-4645-9aa3-8c8a14d849ed</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Assets/**/*" />
@@ -27,7 +27,7 @@
     <Folder Include="Connections" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="D:\git\spacecorps\jira-killer\db.sqlite">
+    <None Update="D:\git\test5\db.sqlite">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

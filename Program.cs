@@ -1,4 +1,4 @@
-using JiraKiller.Apps;
+using Test5.Apps;
 CultureInfo.DefaultThreadCurrentCulture = CultureInfo.DefaultThreadCurrentUICulture = new CultureInfo("en-US");
 var server = new Server();
 #if !DEBUG

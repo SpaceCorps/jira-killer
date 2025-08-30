@@ -1,57 +1,71 @@
 using Bogus;
-using Ivy.Database.Generator.Toolkit;
 using Microsoft.EntityFrameworkCore;
+using Ivy.Database.Generator.Toolkit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace JiraKiller;
+namespace Test5;
 
 public class DataSeeder(DataContext context) : IDataSeeder
 {
     public async Task SeedAsync()
     {
+        var roles = new[] { "Developer", "Senior Developer", "Team Lead", "Project Manager", "QA Engineer", "DevOps Engineer", "Business Analyst", "Product Owner" };
+        
         var userFaker = new Faker<User>()
             .RuleFor(u => u.Name, f => f.Name.FullName())
-            .RuleFor(u => u.Email, (f, u) => f.Internet.Email(u.Name))
+            .RuleFor(u => u.Email, (f, u) => f.Internet.Email(u.Name.ToLower()))
+            .RuleFor(u => u.Role, f => f.PickRandom(roles))
             .RuleFor(u => u.CreatedAt, f => f.Date.Between(DateTime.UtcNow.AddYears(-2), DateTime.UtcNow.AddMonths(-6)))
             .RuleFor(u => u.UpdatedAt, (f, u) => f.Date.Between(u.CreatedAt, DateTime.UtcNow));
-
-        var users = userFaker.Generate(25);
+        
+        var users = userFaker.Generate(50);
         context.Users.AddRange(users);
         await context.SaveChangesAsync();
 
-        var projectNames = new[] 
-        { 
-            "Customer Portal Redesign", "Mobile App Development", "Data Migration Project", 
-            "API Integration Platform", "Security Audit Implementation", "Cloud Infrastructure Setup",
-            "E-commerce Platform", "Analytics Dashboard", "Payment Gateway Integration",
-            "Inventory Management System", "HR Management Suite", "Marketing Automation Tool"
-        };
-        
+        var projectManagers = users.Where(u => u.Role == "Project Manager" || u.Role == "Product Owner" || u.Role == "Team Lead").ToList();
+        if (!projectManagers.Any())
+            projectManagers = users.Take(5).ToList();
+
         var projectFaker = new Faker<Project>()
-            .RuleFor(p => p.Name, f => f.PickRandom(projectNames) + " " + f.Random.AlphaNumeric(3).ToUpper())
+            .RuleFor(p => p.Name, f => f.Commerce.ProductName() + " " + f.PickRandom("Platform", "System", "Application", "Service", "Portal", "Dashboard", "API", "Integration"))
             .RuleFor(p => p.Description, f => f.Lorem.Paragraph())
-            .RuleFor(p => p.StartDate, f => f.Date.Between(DateTime.UtcNow.AddMonths(-18), DateTime.UtcNow.AddMonths(-3)))
-            .RuleFor(p => p.EndDate, (f, p) => f.Random.Bool(0.7f) ? f.Date.Between(p.StartDate!.Value.AddMonths(1), DateTime.UtcNow.AddMonths(6)) : null)
-            .RuleFor(p => p.CreatedAt, (f, p) => f.Date.Between(p.StartDate ?? DateTime.UtcNow.AddMonths(-12), DateTime.UtcNow.AddMonths(-2)))
+            .RuleFor(p => p.CreatedBy, f => f.PickRandom(projectManagers).Id)
+            .RuleFor(p => p.CreatedAt, f => f.Date.Between(DateTime.UtcNow.AddMonths(-18), DateTime.UtcNow.AddMonths(-3)))
             .RuleFor(p => p.UpdatedAt, (f, p) => f.Date.Between(p.CreatedAt, DateTime.UtcNow));
 
-        var projects = projectFaker.Generate(12);
+        var projects = projectFaker.Generate(15);
         context.Projects.AddRange(projects);
         await context.SaveChangesAsync();
 
-        var ticketTitles = new[]
+        var developers = users.Where(u => u.Role.Contains("Developer") || u.Role == "QA Engineer" || u.Role == "DevOps Engineer").ToList();
+        if (!developers.Any())
+            developers = users.ToList();
+
+        var ticketTitles = new[] 
         {
-            "Fix login authentication bug", "Update user profile page", "Implement search functionality",
-            "Database optimization needed", "Add export to PDF feature", "Mobile responsive issues",
-            "Performance improvements required", "Security vulnerability patch", "API endpoint not responding",
-            "Data validation errors", "Email notifications not sending", "Dashboard loading slowly",
-            "Integration test failures", "Memory leak in production", "Update documentation",
-            "Refactor legacy code", "Add unit tests", "Deploy to staging environment",
-            "Configure CI/CD pipeline", "Migrate to new database", "Update third-party libraries",
-            "Fix cross-browser compatibility", "Add user permissions", "Implement caching strategy"
+            "Fix login authentication issue",
+            "Implement user profile page",
+            "Database connection timeout error",
+            "Add email notification feature",
+            "Optimize query performance",
+            "Update API documentation",
+            "Fix responsive layout on mobile",
+            "Implement data export functionality",
+            "Security vulnerability patch",
+            "Add unit tests for service layer",
+            "Refactor legacy code module",
+            "Integrate third-party payment gateway",
+            "Fix memory leak in background job",
+            "Implement caching strategy",
+            "Add logging and monitoring",
+            "Update dependencies to latest versions",
+            "Fix cross-browser compatibility issue",
+            "Implement search functionality",
+            "Add data validation rules",
+            "Performance optimization for large datasets"
         };
 
         var tickets = new List<Ticket>();
@@ -59,23 +73,23 @@ public class DataSeeder(DataContext context) : IDataSeeder
         
         foreach (var project in projects)
         {
-            var ticketCount = faker.Random.Int(8, 30);
-            
+            var ticketCount = faker.Random.Int(5, 30);
             for (int i = 0; i < ticketCount; i++)
             {
                 var createdAt = faker.Date.Between(project.CreatedAt, DateTime.UtcNow.AddDays(-1));
                 var status = faker.PickRandom<TicketStatus>();
-                var priority = faker.PickRandom<Priority>();
+                var priority = faker.PickRandom<TicketPriority>();
                 
                 var ticket = new Ticket
                 {
-                    ProjectId = project.Id,
-                    AssignedUserId = faker.Random.Bool(0.85f) ? faker.PickRandom(users).Id : null,
                     Title = faker.PickRandom(ticketTitles) + " - " + faker.Random.AlphaNumeric(4).ToUpper(),
                     Description = faker.Lorem.Paragraphs(faker.Random.Int(1, 3)),
+                    ProjectId = project.Id,
                     Priority = priority,
                     Status = status,
-                    DueDate = faker.Random.Bool(0.6f) ? faker.Date.Between(createdAt.AddDays(1), DateTime.UtcNow.AddMonths(2)) : null,
+                    DueDate = faker.Random.Bool(0.7f) ? faker.Date.Between(createdAt.AddDays(1), DateTime.UtcNow.AddMonths(2)) : null,
+                    CreatedBy = faker.PickRandom(users).Id,
+                    AssignedTo = faker.Random.Bool(0.85f) ? faker.PickRandom(developers).Id : null,
                     CreatedAt = createdAt,
                     UpdatedAt = faker.Date.Between(createdAt, DateTime.UtcNow)
                 };
@@ -87,31 +101,35 @@ public class DataSeeder(DataContext context) : IDataSeeder
         context.Tickets.AddRange(tickets);
         await context.SaveChangesAsync();
 
-        var timeLogs = new List<TimeLog>();
+        var timeEntries = new List<TimeEntry>();
+        var assignedTickets = tickets.Where(t => t.AssignedTo.HasValue && (t.Status == TicketStatus.InProgress || t.Status == TicketStatus.Resolved || t.Status == TicketStatus.Closed)).ToList();
         
-        foreach (var ticket in tickets.Where(t => t.AssignedUserId.HasValue && (t.Status == TicketStatus.in_progress || t.Status == TicketStatus.completed || t.Status == TicketStatus.closed)))
+        foreach (var ticket in assignedTickets)
         {
-            var logCount = faker.Random.Int(1, 8);
-            var availableUsers = users.Where(u => u.Id == ticket.AssignedUserId.Value || faker.Random.Bool(0.3f)).ToList();
+            var entryCount = faker.Random.Int(1, 8);
+            var currentDate = ticket.CreatedAt;
             
-            for (int i = 0; i < logCount; i++)
+            for (int i = 0; i < entryCount; i++)
             {
-                var loggedAt = faker.Date.Between(ticket.CreatedAt, ticket.UpdatedAt);
-                var timeLog = new TimeLog
+                currentDate = faker.Date.Between(currentDate, ticket.UpdatedAt);
+                var loggedAt = faker.Date.Between(currentDate, currentDate.AddDays(3));
+                
+                var timeEntry = new TimeEntry
                 {
                     TicketId = ticket.Id,
-                    UserId = faker.PickRandom(availableUsers).Id,
-                    Hours = faker.Random.Decimal(0.5M, 8.0M),
+                    UserId = ticket.AssignedTo!.Value,
+                    Hours = Math.Round((decimal)faker.Random.Double(0.5, 8.0), 1),
                     LoggedAt = loggedAt,
                     CreatedAt = loggedAt,
                     UpdatedAt = faker.Date.Between(loggedAt, DateTime.UtcNow)
                 };
                 
-                timeLogs.Add(timeLog);
+                timeEntries.Add(timeEntry);
+                currentDate = loggedAt;
             }
         }
         
-        context.TimeLogs.AddRange(timeLogs);
+        context.TimeEntries.AddRange(timeEntries);
         await context.SaveChangesAsync();
     }
 }

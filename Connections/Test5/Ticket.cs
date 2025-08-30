@@ -4,10 +4,11 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace JiraKiller.Connections.JiraKiller;
+namespace Test5.Connections.Test5;
 
 [Table("ticket")]
-[Index("AssignedUserId", Name = "IX_ticket_assigned_user_id")]
+[Index("AssignedTo", Name = "IX_ticket_assigned_to")]
+[Index("CreatedBy", Name = "IX_ticket_created_by")]
 [Index("ProjectId", Name = "IX_ticket_project_id")]
 public partial class Ticket
 {
@@ -15,17 +16,14 @@ public partial class Ticket
     [Column("id")]
     public int Id { get; set; }
 
-    [Column("project_id")]
-    public int ProjectId { get; set; }
-
-    [Column("assigned_user_id")]
-    public int? AssignedUserId { get; set; }
-
     [Column("title")]
     public string Title { get; set; } = null!;
 
     [Column("description")]
     public string? Description { get; set; }
+
+    [Column("project_id")]
+    public int ProjectId { get; set; }
 
     [Column("priority")]
     public int Priority { get; set; }
@@ -36,20 +34,30 @@ public partial class Ticket
     [Column("due_date")]
     public DateTime? DueDate { get; set; }
 
+    [Column("created_by")]
+    public int CreatedBy { get; set; }
+
+    [Column("assigned_to")]
+    public int? AssignedTo { get; set; }
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 
-    [ForeignKey("AssignedUserId")]
-    [InverseProperty("Tickets")]
-    public virtual User? AssignedUser { get; set; }
+    [ForeignKey("AssignedTo")]
+    [InverseProperty("TicketAssignedToNavigations")]
+    public virtual User? AssignedToNavigation { get; set; }
+
+    [ForeignKey("CreatedBy")]
+    [InverseProperty("TicketCreatedByNavigations")]
+    public virtual User CreatedByNavigation { get; set; } = null!;
 
     [ForeignKey("ProjectId")]
     [InverseProperty("Tickets")]
     public virtual Project Project { get; set; } = null!;
 
     [InverseProperty("Ticket")]
-    public virtual ICollection<TimeLog> TimeLogs { get; set; } = new List<TimeLog>();
+    public virtual ICollection<TimeEntry> TimeEntries { get; set; } = new List<TimeEntry>();
 }

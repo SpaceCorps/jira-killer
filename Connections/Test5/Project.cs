@@ -4,9 +4,10 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace JiraKiller.Connections.JiraKiller;
+namespace Test5.Connections.Test5;
 
 [Table("project")]
+[Index("CreatedBy", Name = "IX_project_created_by")]
 public partial class Project
 {
     [Key]
@@ -19,17 +20,18 @@ public partial class Project
     [Column("description")]
     public string? Description { get; set; }
 
-    [Column("start_date")]
-    public DateTime? StartDate { get; set; }
-
-    [Column("end_date")]
-    public DateTime? EndDate { get; set; }
+    [Column("created_by")]
+    public int CreatedBy { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
+
+    [ForeignKey("CreatedBy")]
+    [InverseProperty("Projects")]
+    public virtual User CreatedByNavigation { get; set; } = null!;
 
     [InverseProperty("Project")]
     public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();

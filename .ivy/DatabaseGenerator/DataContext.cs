@@ -4,32 +4,35 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace JiraKiller
+namespace Test5
 {
-    public enum Priority
+    public enum TicketPriority
     {
-        low,
-        medium,
-        high,
-        critical
+        Low,
+        Medium,
+        High,
+        Critical
     }
 
     public enum TicketStatus
     {
-        open,
-        in_progress,
-        completed,
-        blocked,
-        closed
+        Open,
+        InProgress,
+        Resolved,
+        Closed,
+        Blocked
     }
 
+    [Index(nameof(Email), IsUnique = true)]
     [Table("user")]
     public class User
     {
         public User()
         {
-            AssignedTickets = new HashSet<Ticket>();
-            TimeLogs = new HashSet<TimeLog>();
+            ProjectsCreated = new HashSet<Project>();
+            TicketsCreated = new HashSet<Ticket>();
+            TicketsAssigned = new HashSet<Ticket>();
+            TimeEntries = new HashSet<TimeEntry>();
         }
 
         [Key]
@@ -45,15 +48,22 @@ namespace JiraKiller
         public string Email { get; set; } = null!;
 
         [Required]
+        [Column("role")]
+        public string Role { get; set; } = null!;
+
+        [Required]
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
         [Required]
+        [ConcurrencyCheck]
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
 
-        public virtual ICollection<Ticket> AssignedTickets { get; set; }
-        public virtual ICollection<TimeLog> TimeLogs { get; set; }
+        public virtual ICollection<Project> ProjectsCreated { get; set; }
+        public virtual ICollection<Ticket> TicketsCreated { get; set; }
+        public virtual ICollection<Ticket> TicketsAssigned { get; set; }
+        public virtual ICollection<TimeEntry> TimeEntries { get; set; }
     }
 
     [Table("project")]
@@ -75,19 +85,21 @@ namespace JiraKiller
         [Column("description")]
         public string? Description { get; set; }
 
-        [Column("start_date")]
-        public DateTime? StartDate { get; set; }
-
-        [Column("end_date")]
-        public DateTime? EndDate { get; set; }
+        [Required]
+        [Column("created_by")]
+        public int CreatedBy { get; set; }
 
         [Required]
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
         [Required]
+        [ConcurrencyCheck]
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
+
+        [ForeignKey("CreatedBy")]
+        public virtual User CreatedByUser { get; set; } = null!;
 
         public virtual ICollection<Ticket> Tickets { get; set; }
     }
@@ -97,19 +109,12 @@ namespace JiraKiller
     {
         public Ticket()
         {
-            TimeLogs = new HashSet<TimeLog>();
+            TimeEntries = new HashSet<TimeEntry>();
         }
 
         [Key]
         [Column("id")]
         public int Id { get; set; }
-
-        [Required]
-        [Column("project_id")]
-        public int ProjectId { get; set; }
-
-        [Column("assigned_user_id")]
-        public int? AssignedUserId { get; set; }
 
         [Required]
         [Column("title")]
@@ -119,8 +124,12 @@ namespace JiraKiller
         public string? Description { get; set; }
 
         [Required]
+        [Column("project_id")]
+        public int ProjectId { get; set; }
+
+        [Required]
         [Column("priority")]
-        public Priority Priority { get; set; }
+        public TicketPriority Priority { get; set; }
 
         [Required]
         [Column("status")]
@@ -130,24 +139,35 @@ namespace JiraKiller
         public DateTime? DueDate { get; set; }
 
         [Required]
+        [Column("created_by")]
+        public int CreatedBy { get; set; }
+
+        [Column("assigned_to")]
+        public int? AssignedTo { get; set; }
+
+        [Required]
         [Column("created_at")]
         public DateTime CreatedAt { get; set; }
 
         [Required]
+        [ConcurrencyCheck]
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
 
         [ForeignKey("ProjectId")]
         public virtual Project Project { get; set; } = null!;
 
-        [ForeignKey("AssignedUserId")]
-        public virtual User? AssignedUser { get; set; }
+        [ForeignKey("CreatedBy")]
+        public virtual User CreatedByUser { get; set; } = null!;
 
-        public virtual ICollection<TimeLog> TimeLogs { get; set; }
+        [ForeignKey("AssignedTo")]
+        public virtual User? AssignedToUser { get; set; }
+
+        public virtual ICollection<TimeEntry> TimeEntries { get; set; }
     }
 
-    [Table("time_log")]
-    public class TimeLog
+    [Table("time_entry")]
+    public class TimeEntry
     {
         [Key]
         [Column("id")]
@@ -174,6 +194,7 @@ namespace JiraKiller
         public DateTime CreatedAt { get; set; }
 
         [Required]
+        [ConcurrencyCheck]
         [Column("updated_at")]
         public DateTime UpdatedAt { get; set; }
 
@@ -193,47 +214,45 @@ namespace JiraKiller
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Project> Projects { get; set; } = null!;
         public DbSet<Ticket> Tickets { get; set; } = null!;
-        public DbSet<TimeLog> TimeLogs { get; set; } = null!;
+        public DbSet<TimeEntry> TimeEntries { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<User>(entity =>
-            {
-                entity.ToTable("user");
-                entity.HasIndex(e => e.Email).IsUnique();
-            });
+            modelBuilder.Entity<Project>()
+                .HasOne(p => p.CreatedByUser)
+                .WithMany(u => u.ProjectsCreated)
+                .HasForeignKey(p => p.CreatedBy)
+                .HasConstraintName("fk_project_created_by");
 
-            modelBuilder.Entity<Project>(entity =>
-            {
-                entity.ToTable("project");
-            });
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.Project)
+                .WithMany(p => p.Tickets)
+                .HasForeignKey(t => t.ProjectId)
+                .HasConstraintName("fk_ticket_project_id");
 
-            modelBuilder.Entity<Ticket>(entity =>
-            {
-                entity.ToTable("ticket");
-                entity.HasOne(d => d.Project)
-                      .WithMany(p => p.Tickets)
-                      .HasForeignKey(d => d.ProjectId)
-                      .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(d => d.AssignedUser)
-                      .WithMany(p => p.AssignedTickets)
-                      .HasForeignKey(d => d.AssignedUserId)
-                      .OnDelete(DeleteBehavior.SetNull);
-            });
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.CreatedByUser)
+                .WithMany(u => u.TicketsCreated)
+                .HasForeignKey(t => t.CreatedBy)
+                .HasConstraintName("fk_ticket_created_by");
 
-            modelBuilder.Entity<TimeLog>(entity =>
-            {
-                entity.ToTable("time_log");
-                entity.Property(e => e.Hours).HasColumnType("decimal(5,2)");
-                entity.HasOne(d => d.Ticket)
-                      .WithMany(p => p.TimeLogs)
-                      .HasForeignKey(d => d.TicketId)
-                      .OnDelete(DeleteBehavior.Cascade);
-                entity.HasOne(d => d.User)
-                      .WithMany(p => p.TimeLogs)
-                      .HasForeignKey(d => d.UserId)
-                      .OnDelete(DeleteBehavior.Cascade);
-            });
+            modelBuilder.Entity<Ticket>()
+                .HasOne(t => t.AssignedToUser)
+                .WithMany(u => u.TicketsAssigned)
+                .HasForeignKey(t => t.AssignedTo)
+                .HasConstraintName("fk_ticket_assigned_to");
+
+            modelBuilder.Entity<TimeEntry>()
+                .HasOne(te => te.Ticket)
+                .WithMany(t => t.TimeEntries)
+                .HasForeignKey(te => te.TicketId)
+                .HasConstraintName("fk_time_entry_ticket_id");
+
+            modelBuilder.Entity<TimeEntry>()
+                .HasOne(te => te.User)
+                .WithMany(u => u.TimeEntries)
+                .HasForeignKey(te => te.UserId)
+                .HasConstraintName("fk_time_entry_user_id");
         }
     }
 }

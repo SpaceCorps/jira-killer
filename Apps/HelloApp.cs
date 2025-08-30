@@ -1,4 +1,4 @@
-namespace JiraKiller.Apps;
+namespace Test5.Apps;
 
 [App(icon:Icons.PartyPopper, title:"Hello")]
 public class HelloApp : ViewBase

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
 
-namespace JiraKiller.Connections.JiraKiller;
+namespace Test5.Connections.Test5;
 
 [Table("user")]
 [Index("Email", Name = "IX_user_email", IsUnique = true)]
@@ -20,15 +20,24 @@ public partial class User
     [Column("email")]
     public string Email { get; set; } = null!;
 
+    [Column("role")]
+    public string Role { get; set; } = null!;
+
     [Column("created_at")]
     public DateTime CreatedAt { get; set; }
 
     [Column("updated_at")]
     public DateTime UpdatedAt { get; set; }
 
-    [InverseProperty("AssignedUser")]
-    public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
+    [InverseProperty("CreatedByNavigation")]
+    public virtual ICollection<Project> Projects { get; set; } = new List<Project>();
+
+    [InverseProperty("AssignedToNavigation")]
+    public virtual ICollection<Ticket> TicketAssignedToNavigations { get; set; } = new List<Ticket>();
+
+    [InverseProperty("CreatedByNavigation")]
+    public virtual ICollection<Ticket> TicketCreatedByNavigations { get; set; } = new List<Ticket>();
 
     [InverseProperty("User")]
-    public virtual ICollection<TimeLog> TimeLogs { get; set; } = new List<TimeLog>();
+    public virtual ICollection<TimeEntry> TimeEntries { get; set; } = new List<TimeEntry>();
 }

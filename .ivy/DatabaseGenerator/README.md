@@ -1,9 +1,9 @@
-# JiraKiller 
+# Test5 
 
 ## Schema
 
 ```dbml 
-Enum priority {
+Enum ticket_priority {
     low
     medium
     high
@@ -13,54 +13,57 @@ Enum priority {
 Enum ticket_status {
     open
     in_progress
-    completed
-    blocked
+    resolved
     closed
+    blocked
 }
 
 Table user {
-    id int [pk, increment, not null]
+    id int [pk, increment]
     name varchar [not null]
     email varchar [not null, unique]
+    role varchar [not null]
     created_at timestamp [not null]
     updated_at timestamp [not null]
 }
 
 Table project {
-    id int [pk, increment, not null]
+    id int [pk, increment]
     name varchar [not null]
     description text [null]
-    start_date date [null]
-    end_date date [null]
+    created_by int [not null]
     created_at timestamp [not null]
     updated_at timestamp [not null]
 }
 
 Table ticket {
-    id int [pk, increment, not null]
-    project_id int [not null]
-    assigned_user_id int [null]
+    id int [pk, increment]
     title varchar [not null]
     description text [null]
-    priority priority [not null]
+    project_id int [not null]
+    priority ticket_priority [not null]
     status ticket_status [not null]
     due_date date [null]
+    created_by int [not null]
+    assigned_to int [null]
     created_at timestamp [not null]
     updated_at timestamp [not null]
 }
 
-Table time_log {
-    id int [pk, increment, not null]
+Table time_entry {
+    id int [pk, increment]
     ticket_id int [not null]
     user_id int [not null]
-    hours decimal(5,2) [not null]
+    hours decimal [not null]
     logged_at timestamp [not null]
     created_at timestamp [not null]
     updated_at timestamp [not null]
 }
 
+Ref: project.created_by > user.id
 Ref: ticket.project_id > project.id
-Ref: ticket.assigned_user_id > user.id
-Ref: time_log.ticket_id > ticket.id
-Ref: time_log.user_id > user.id
+Ref: ticket.created_by > user.id
+Ref: ticket.assigned_to > user.id
+Ref: time_entry.ticket_id > ticket.id
+Ref: time_entry.user_id > user.id
 ```
