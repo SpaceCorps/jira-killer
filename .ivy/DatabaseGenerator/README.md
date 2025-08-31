@@ -3,117 +3,50 @@
 ## Schema
 
 ```dbml 
-Enum issue_type {
-    bug
-    task
-    story
-    epic
+Table author {
+  id int [pk, increment]
+  name varchar [not null]
+  email varchar [not null, unique]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
 }
 
-Enum priority {
-    lowest
-    low
-    medium
-    high
-    highest
+Table post {
+  id int [pk, increment]
+  author_id int [not null]
+  title varchar [not null]
+  content text [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
 }
 
-Enum status {
-    open
-    in_progress
-    resolved
-    closed
-    reopened
+Table comment {
+  id int [pk, increment]
+  post_id int [not null]
+  author_id int [not null]
+  content text [not null]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
 }
 
-Enum role {
-    admin
-    developer
-    tester
-    viewer
+Table tag {
+  id int [pk, increment]
+  name varchar [not null, unique]
+  created_at timestamp [not null]
+  updated_at timestamp [not null]
 }
 
-Table users {
-    id int [pk, increment, not null]
-    username varchar [not null, unique]
-    email varchar [not null, unique]
-    full_name varchar [not null]
-    created_at timestamp [not null]
-    updated_at timestamp [not null]
+Table post_tag {
+  post_id int [not null]
+  tag_id int [not null]
+  indexes {
+    (post_id, tag_id) [pk]
+  }
 }
 
-Table projects {
-    id int [pk, increment, not null]
-    name varchar [not null]
-    project_key varchar [not null, unique]
-    description text [null]
-    created_at timestamp [not null]
-    updated_at timestamp [not null]
-}
-
-Table project_user {
-    project_id int [not null]
-    user_id int [not null]
-    role role [not null]
-    indexes {
-        (project_id, user_id) [pk]
-    }
-}
-
-Table issues {
-    id int [pk, increment, not null]
-    project_id int [not null]
-    reporter_id int [not null]
-    assignee_id int [null]
-    issue_type issue_type [not null]
-    priority priority [not null]
-    status status [not null]
-    summary varchar [not null]
-    description text [null]
-    created_at timestamp [not null]
-    updated_at timestamp [not null]
-}
-
-Table comments {
-    id int [pk, increment, not null]
-    issue_id int [not null]
-    author_id int [not null]
-    body text [not null]
-    created_at timestamp [not null]
-    updated_at timestamp [not null]
-}
-
-Table worklogs {
-    id int [pk, increment, not null]
-    issue_id int [not null]
-    user_id int [not null]
-    time_spent_minutes int [not null]
-    started_at timestamp [not null]
-    comment text [null]
-    created_at timestamp [not null]
-    updated_at timestamp [not null]
-}
-
-Table attachments {
-    id int [pk, increment, not null]
-    issue_id int [not null]
-    uploader_id int [not null]
-    filename varchar [not null]
-    file_path varchar [not null]
-    file_size int [not null]
-    created_at timestamp [not null]
-    updated_at timestamp [not null]
-}
-
-Ref: projects.id > issues.project_id
-Ref: users.id > issues.reporter_id
-Ref: users.id > issues.assignee_id
-Ref: users.id > comments.author_id
-Ref: issues.id > comments.issue_id
-Ref: users.id > worklogs.user_id
-Ref: issues.id > worklogs.issue_id
-Ref: users.id > attachments.uploader_id
-Ref: issues.id > attachments.issue_id
-Ref: projects.id > project_user.project_id
-Ref: users.id > project_user.user_id
+Ref: post.author_id > author.id
+Ref: comment.post_id > post.id
+Ref: comment.author_id > author.id
+Ref: post_tag.post_id > post.id
+Ref: post_tag.tag_id > tag.id
 ```
